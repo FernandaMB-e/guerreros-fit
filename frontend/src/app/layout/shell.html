@@ -1,0 +1,27 @@
+<div class="shell">
+  <nav class="sidebar" aria-label="Principal">
+    <a class="brand" routerLink="/inicio">
+      <span class="brand-logo"><img src="logo.png" alt="Logo de Guerreros Fit" /></span>
+      <span class="brand-name">GUERREROS<small>FIT</small></span>
+    </a>
+
+    <a class="nav-link" routerLink="/inicio" routerLinkActive="active">Inicio</a>
+    <a class="nav-link" routerLink="/clientes" routerLinkActive="active">Clientes</a>
+    <a class="nav-link" routerLink="/comprobantes" routerLinkActive="active">
+      <span>Comprobantes</span>
+      @if (badges.pendingProofs() > 0) {
+        <span class="badge">{{ badges.pendingProofs() }}</span>
+      }
+    </a>
+    <a class="nav-link" routerLink="/horarios" routerLinkActive="active">Horarios</a>
+
+    <div class="sidebar-foot">
+      <span>{{ auth.user()?.full_name }}</span>
+      <button type="button" (click)="logout()">Cerrar sesión</button>
+    </div>
+  </nav>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>

@@ -1,1 +1,101 @@
 /* You can add global styles to this file, and also import other style files */
+:root {
+  --bg: #F7F7F5;
+  --surface: #FFFFFF;
+  --border: #E4E2DC;
+  --border-strong: #B9B5A8;
+  --ink: #1B1B1B;
+  --muted: #6B6B66;
+
+  --sidebar: #17171A;
+  --sidebar-border: #34343A;
+  --sidebar-text: #CFCCC3;
+
+  --yellow: #F5B700;
+  --yellow-soft: #FFF0C2;
+  --yellow-ink: #6E4B00;
+  --red: #B3261E;
+  --red-soft: #FBE4E1;
+  --red-ink: #8E2418;
+  --coral: #FF6B5B;
+  --gray-soft: #E9E8E4;
+  --gray-ink: #3A3A36;
+
+  --font-body: 'Barlow', system-ui, sans-serif;
+  --font-display: 'Barlow Condensed', 'Barlow', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+}
+
+h1, h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+}
+h1 { font-size: 38px; font-weight: 700; letter-spacing: 0.5px; }
+h2 { font-size: 22px; font-weight: 600; letter-spacing: 1px; }
+
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+.muted { color: var(--muted); font-size: 13px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 2px rgba(20, 20, 20, 0.05);
+}
+
+.page-top {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 16px; flex-wrap: wrap;
+}
+
+.row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-top: 1px solid #ECEAE4; flex-wrap: wrap;
+}
+
+/* Botones */
+.btn {
+  min-height: 44px; padding: 0 18px; border-radius: 8px;
+  border: 1px solid var(--yellow); background: var(--yellow); color: #17171A;
+  font: 600 15px var(--font-body); cursor: pointer;
+}
+.btn:disabled { opacity: 0.6; cursor: default; }
+.btn-secondary { background: var(--surface); color: var(--ink); border-color: var(--border-strong); }
+
+/* Etiquetas de estado */
+.tag {
+  display: inline-block; font-size: 12px; font-weight: 700;
+  padding: 4px 10px; border-radius: 6px; white-space: nowrap;
+}
+.tag-red { background: var(--red-soft); color: var(--red-ink); }
+.tag-amber { background: var(--yellow-soft); color: var(--yellow-ink); }
+.tag-gray { background: var(--gray-soft); color: var(--gray-ink); }
+
+/* Foto del cliente (o sus iniciales) */
+.avatar {
+  width: 44px; height: 44px; flex: none; overflow: hidden; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #EFEDE6; border: 2px solid #D9D5C8;
+  font-weight: 600; color: var(--gray-ink);
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Campos de formulario */
+.field { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600; }
+.field input {
+  height: 44px; padding: 0 14px; border-radius: 8px;
+  border: 1px solid #CFCBBF; background: var(--surface); color: var(--ink);
+  font: 400 15px var(--font-body);
+}
