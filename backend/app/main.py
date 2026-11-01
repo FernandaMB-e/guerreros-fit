@@ -1,23 +1,21 @@
-from pathlib import Path
-
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
+from fastapi import Depends, FastAPI
 
 from app.core.config import settings
-from app.routers import clients, dashboard, plans, proofs, schedules, subscriptions
+from app.core.deps import get_current_user
+from app.routers import (
+    auth, clients, dashboard, files, plans, proofs, schedules, subscriptions,
+)
 from app.services.client_service import PHOTOS_DIR
 
 app = FastAPI(title=settings.app_name)
-
-app.include_router(clients.router, prefix="/api")
-app.include_router(plans.router, prefix="/api")
-app.include_router(subscriptions.router, prefix="/api")
-app.include_router(proofs.router, prefix="/api")
-app.include_router(schedules.router, prefix="/api")
-app.include_router(dashboard.router, prefix="/api")
-# Solo se sirven las fotos. Los comprobantes irán detrás del login más adelante.
 PHOTOS_DIR.mkdir(parents=True, exist_ok=True)
-app.mount("/api/uploads/fotos", StaticFiles(directory=PHOTOS_DIR), name="fotos")
+
+# Solo el login queda abierto; todo lo demás exige sesión
+app.include_router(auth.router, prefix="/api")
+
+protected = [Depends(get_current_user)]
+for module in (clients, plans, subscriptions, proofs, schedules, dashboard, files):
+    app.include_router(module.router, prefix="/api", dependencies=protected)
 
 
 @app.get("/api/health")

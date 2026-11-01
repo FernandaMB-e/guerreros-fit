@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     upload_dir: str = "uploads"
     admin_email: str = "admin@guerrerosfit.local"
     admin_password: str = "Cambiar123!"
+    cookie_secure: bool = False  # poner True cuando haya HTTPS
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
