@@ -1,0 +1,113 @@
+<article class="card proof">
+  <button type="button" class="thumb" (click)="zoom.emit()" aria-label="Ampliar el comprobante">
+    <img [src]="proof().image_url" alt="Imagen del comprobante" loading="lazy" />
+  </button>
+
+  <div class="who">
+    @if (client(); as c) {
+      <app-avatar [name]="c.full_name" [photoUrl]="c.photo_url" />
+      <div>
+        <b>{{ c.full_name }}</b>
+        <small class="muted">{{ origin() }}</small>
+      </div>
+    } @else {
+      <div>
+        <b>Remitente no registrado</b>
+        <small class="muted">{{ origin() }}</small>
+      </div>
+    }
+  </div>
+
+  @if (proof().status === 'pending') {
+    @if (!client()) {
+      <div class="picker">
+        <label class="field">
+          <span>¿De qué cliente es?</span>
+          <input type="search" [formControl]="query" placeholder="Buscar por nombre o teléfono" autocomplete="off" />
+        </label>
+        @for (c of matches(); track c.id) {
+          <button type="button" class="pick" (click)="pickClient(c)">
+            <app-avatar [name]="c.full_name" [photoUrl]="c.photo_url" [size]="32" />
+            <span class="pick-name">{{ c.full_name }}</span>
+            <span class="muted">{{ phone(c.phone) }}</span>
+          </button>
+        }
+      </div>
+    }
+
+    <div class="tags">
+      @if (planId() && !changingPlan()) {
+        <span class="tag tag-amber">{{ plan()?.name }}</span>
+        <button type="button" class="linklike" (click)="changingPlan.set(true)">Cambiar plan</button>
+      } @else {
+        <label class="field plan-field">
+          <span>Plan que pagó</span>
+          <select [value]="planId() ?? ''" (change)="onPlan($any($event.target).value)">
+            <option value="">Elige un plan</option>
+            @for (p of plans(); track p.id) {
+              <option [value]="p.id" [selected]="p.id === planId()">{{ p.name }}</option>
+            }
+          </select>
+        </label>
+      }
+      @if (tag(); as t) {
+        <span [class]="'tag ' + t.css">{{ t.label }}</span>
+      }
+      @if (picked()) {
+        <button type="button" class="linklike" (click)="picked.set(null)">Cambiar cliente</button>
+      }
+    </div>
+
+    @if (period(); as p) {
+      <p class="period"><span class="muted">Nueva vigencia</span> <b>{{ p }}</b></p>
+    }
+
+    @if (!rejecting()) {
+      <div class="actions">
+        <button type="button" class="btn" [disabled]="!canApprove()" (click)="approve()">
+          {{ busy() ? 'Guardando…' : 'Aprobar y activar' }}
+        </button>
+        <button type="button" class="btn btn-secondary" [disabled]="busy()" (click)="rejecting.set(true)">
+          Rechazar
+        </button>
+      </div>
+      @if (missing()) {
+        <p class="muted">{{ missing() }}</p>
+      }
+    } @else {
+      <label class="field">
+        <span>Motivo (opcional)</span>
+        <input [formControl]="reason" maxlength="300" placeholder="Ej. El monto no coincide" />
+      </label>
+      <div class="actions">
+        <button type="button" class="btn btn-danger" [disabled]="busy()" (click)="reject()">
+          {{ busy() ? 'Guardando…' : 'Confirmar rechazo' }}
+        </button>
+        <button type="button" class="btn btn-secondary" [disabled]="busy()" (click)="rejecting.set(false)">
+          Cancelar
+        </button>
+      </div>
+    }
+
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+  } @else {
+    <div class="tags">
+      @if (proof().plan; as p) {
+        <span class="tag tag-amber">{{ p.name }}</span>
+      }
+      @if (proof().status === 'approved') {
+        <span class="tag tag-gray">Aprobado</span>
+      } @else {
+        <span class="tag tag-red">Rechazado</span>
+      }
+    </div>
+    @if (proof().reviewed_at; as at) {
+      <p class="muted">Revisado {{ when(at) }}</p>
+    }
+    @if (proof().rejection_reason; as reason) {
+      <p class="muted">Motivo: {{ reason }}</p>
+    }
+  }
+</article>
