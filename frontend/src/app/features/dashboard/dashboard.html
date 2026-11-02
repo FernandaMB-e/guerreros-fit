@@ -1,0 +1,172 @@
+<div class="page-top">
+  <h1>Inicio</h1>
+
+  <div class="search">
+    <input
+      type="search"
+      [formControl]="search"
+      aria-label="Buscar cliente"
+      placeholder="Buscar cliente por nombre o teléfono"
+      autocomplete="off"
+      (keydown.escape)="search.setValue('')"
+    />
+    @if (results(); as list) {
+      <div class="results card" aria-live="polite">
+        @for (c of list; track c.id) {
+          <a class="result" [routerLink]="['/clientes', c.id]">
+            <app-avatar [name]="c.full_name" [photoUrl]="c.photo_url" [size]="36" />
+            <span class="result-name">
+              <b>{{ c.full_name }}</b>
+              <small class="muted">{{ phone(c.phone) }}</small>
+            </span>
+            <span [class]="'tag ' + tagOf(c.membership.status).css">
+              {{ tagOf(c.membership.status).label }}
+            </span>
+          </a>
+        } @empty {
+          <p class="muted empty">No se encontró ningún cliente.</p>
+        }
+      </div>
+    }
+  </div>
+</div>
+<p class="muted lead">
+  La búsqueda incluye clientes con suscripción vencida: sus datos siempre se conservan.
+</p>
+
+@if (data(); as d) {
+  <h2>Resumen general</h2>
+  <div class="kpis">
+    <div class="card kpi">
+      <span class="kpi-icon neutral">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" /></svg>
+      </span>
+      <div>
+        <div class="kpi-num">{{ d.summary.total_clients }}</div>
+        <div class="muted">Clientes totales</div>
+      </div>
+    </div>
+    <div class="card kpi">
+      <span class="kpi-icon gray">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m8 12 3 3 5-6" /></svg>
+      </span>
+      <div>
+        <div class="kpi-num">{{ d.summary.up_to_date }}</div>
+        <div class="muted">Al corriente</div>
+      </div>
+    </div>
+    <div class="card kpi">
+      <span class="kpi-icon red-bg">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20L12 3z" /><path d="M12 10v4M12 17.5v.5" /></svg>
+      </span>
+      <div>
+        <div class="kpi-num red">{{ d.summary.pending_payment }}</div>
+        <div class="muted">Con pago pendiente</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <section class="card panel">
+      <div class="panel-head">
+        <h2>Vencidas</h2>
+        @if (d.summary.pending_payment > d.overdue.length) {
+          <a class="link" routerLink="/clientes" [queryParams]="{ membership: 'vencida' }">
+            Ver todas ({{ d.summary.pending_payment }}) →
+          </a>
+        }
+      </div>
+      @for (i of d.overdue; track i.client_id) {
+        <div class="row">
+          <app-avatar [name]="i.full_name" [photoUrl]="i.photo_url" />
+          <div class="grow">
+            <b>{{ i.full_name }}</b>
+            <small class="muted">{{ overdueText(i) }}</small>
+          </div>
+          <span class="tag tag-red">{{ overdueAge(i) }}</span>
+          <a class="btn btn-secondary" [routerLink]="['/clientes', i.client_id]">Ver</a>
+        </div>
+      } @empty {
+        <p class="muted">No hay suscripciones vencidas.</p>
+      }
+    </section>
+
+    <section class="card panel">
+      <div class="panel-head">
+        <h2>Próximos recordatorios</h2>
+        <a class="link" routerLink="/clientes" [queryParams]="{ membership: 'por_vencer' }">Ver todos →</a>
+      </div>
+      @for (i of d.upcoming; track i.client_id) {
+        <div class="row">
+          <app-avatar [name]="i.full_name" [photoUrl]="i.photo_url" />
+          <div class="grow">
+            <b>{{ i.full_name }}</b>
+            <small class="muted">{{ upcomingText(i) }}</small>
+            @if (i.reminder_sent) {
+              <small class="muted">Recordatorio por WhatsApp enviado</small>
+            }
+          </div>
+          @if (i.urgency === 'urgente') {
+            <span class="tag tag-amber">Urgente</span>
+          } @else {
+            <span class="tag tag-gray">Próximo</span>
+          }
+          <a class="btn btn-secondary" [routerLink]="['/clientes', i.client_id]">Ver</a>
+        </div>
+      } @empty {
+        <p class="muted">Nadie vence en los próximos 3 días.</p>
+      }
+    </section>
+
+    <section class="card panel">
+      <h2>Acciones rápidas</h2>
+      <a class="qa qa-primary" routerLink="/clientes/nuevo">
+        <span>Registrar nuevo cliente</span>
+        <span aria-hidden="true">›</span>
+      </a>
+      <a class="qa" routerLink="/comprobantes">
+        <span>Revisar comprobantes</span>
+        @if (d.summary.proofs_pending > 0) {
+          <span class="tag tag-amber">{{ d.summary.proofs_pending }} por revisar</span>
+        } @else {
+          <span class="tag tag-gray">Al día</span>
+        }
+      </a>
+    </section>
+
+    <section class="card panel">
+      <h2>Resumen de membresías</h2>
+      <div class="donut-wrap">
+        <svg width="140" height="140" viewBox="0 0 140 140" role="img" [attr.aria-label]="'Membresías de ' + total() + ' clientes'">
+          <g transform="rotate(-90 70 70)" fill="none" stroke-width="18">
+            <circle cx="70" cy="70" [attr.r]="radius" stroke="#EFEDE6" />
+            @for (s of segments(); track s.label) {
+              @if (s.count > 0) {
+                <circle
+                  cx="70" cy="70" [attr.r]="radius"
+                  [attr.stroke]="s.color"
+                  [attr.stroke-dasharray]="s.length + ' ' + circumference"
+                  [attr.stroke-dashoffset]="-s.offset"
+                />
+              }
+            }
+          </g>
+          <text x="70" y="68" text-anchor="middle" class="donut-total">{{ total() }}</text>
+          <text x="70" y="86" text-anchor="middle" class="donut-label">clientes</text>
+        </svg>
+        <ul class="legend">
+          @for (s of segments(); track s.label) {
+            <li><i [style.background]="s.color"></i>{{ s.label }}<b>{{ s.count }}</b></li>
+          }
+        </ul>
+      </div>
+    </section>
+  </div>
+} @else if (error()) {
+  <div class="card">
+    <p>No se pudo cargar el resumen.</p>
+    <button type="button" class="btn" (click)="load()">Reintentar</button>
+  </div>
+} @else {
+  <p class="muted">Cargando…</p>
+}
