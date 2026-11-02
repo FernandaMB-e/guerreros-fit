@@ -1,0 +1,38 @@
+:host { display: block; }
+.proof { display: flex; flex-direction: column; gap: 12px; height: 100%; }
+
+.thumb {
+  display: block; width: 100%; height: 220px; padding: 0; overflow: hidden; cursor: zoom-in;
+  border: 2px dashed #CFCBBF; border-radius: 8px; background: #F1F0EC;
+}
+.thumb img { display: block; width: 100%; height: 100%; object-fit: contain; }
+
+.who { display: flex; align-items: center; gap: 12px; }
+.who b { display: block; font-size: 17px; }
+.who small { display: block; }
+
+.tags { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
+.period { margin: 0; display: flex; gap: 10px; align-items: baseline; }
+p { margin: 0; }
+
+.field select {
+  height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid #CFCBBF;
+  background: var(--surface); color: var(--ink); font: 400 15px var(--font-body);
+}
+.plan-field { flex: 1; min-width: 180px; }
+
+.picker { display: flex; flex-direction: column; gap: 8px; }
+.pick {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 4px 8px;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--surface);
+  color: inherit; text-align: left; font: 400 15px var(--font-body); cursor: pointer;
+}
+.pick-name { flex: 1; font-weight: 600; }
+
+.linklike {
+  padding: 0; border: 0; background: none; cursor: pointer;
+  color: var(--ink); font: 600 13px var(--font-body); text-decoration: underline;
+}
+.btn-danger { background: var(--red); border-color: var(--red); color: #fff; }
+.error { padding: 10px 12px; border-radius: 8px; background: var(--red-soft); color: var(--red-ink); font-size: 14px; }
