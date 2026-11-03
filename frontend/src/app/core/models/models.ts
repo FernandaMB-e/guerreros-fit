@@ -30,6 +30,11 @@ export interface ScheduleBrief {
   end_time: string;
   weekdays: number[]; // 0 = lunes ... 6 = domingo
 }
+export interface ScheduleDetail extends ScheduleBrief {
+  is_active: boolean;
+  student_count: number;
+  students: Client[];
+}
 
 export interface Client {
   id: number;

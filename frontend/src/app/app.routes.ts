@@ -22,6 +22,14 @@ export const routes: Routes = [
         loadComponent: () => import('./features/clients/clients').then((m) => m.Clients),
       },
       {
+        path: 'clientes/nuevo',
+        loadComponent: () => import('./features/clients/clients').then((m) => m.Clients),
+      },
+      {
+        path: 'clientes/:id',
+        loadComponent: () => import('./features/clients/clients').then((m) => m.Clients),
+      },
+      {
         path: 'comprobantes',
         loadComponent: () => import('./features/proofs/proofs').then((m) => m.Proofs),
       },
