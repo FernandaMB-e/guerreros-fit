@@ -20,10 +20,10 @@
 
 <div class="toolbar">
   <p class="muted">
-    Los comprobantes llegan por WhatsApp; aquí solo se revisan. El sistema no procesa pagos.
+    Sube aquí los comprobantes que te envían los clientes y revísalos. El sistema no procesa pagos.
   </p>
   <button type="button" class="btn btn-secondary" [disabled]="uploading()" (click)="file.click()">
-    {{ uploading() ? 'Subiendo…' : 'Subir comprobante a mano' }}
+    {{ uploading() ? 'Subiendo…' : 'Subir comprobante' }}
   </button>
   <input #file type="file" accept="image/*" hidden (change)="onFile($event)" />
 </div>
