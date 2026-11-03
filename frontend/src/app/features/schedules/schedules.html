@@ -1,0 +1,156 @@
+<div class="page-top">
+  <h1>HORARIOS</h1>
+  <button type="button" class="btn-primary" (click)="openCreateModal()">+ Nuevo horario</button>
+</div>
+
+<div class="schedules-container">
+
+  <!-- CUADRÍCULA IZQUIERDA -->
+  <div class="card grid-card">
+    <div class="legend-bar">
+      <span class="legend-item"><i class="dot crossfit"></i> CrossFit</span>
+      <span class="legend-item"><i class="dot karate"></i> Karate</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="schedule-table">
+        <thead>
+          <tr>
+            <th></th>
+            @for (day of weekDays; track day.id) {
+              <th>{{ day.label }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (hour of hours(); track hour) {
+            <tr>
+              <td class="hour-col">{{ hour }}</td>
+              @for (day of weekDays; track day.id) {
+                <td>
+                  @if (getScheduleForSlot(hour, day.id); as sch) {
+                    <button 
+                      type="button" 
+                      class="slot-btn" 
+                      [class.karate]="sch.discipline === 'karate'"
+                      [class.crossfit]="sch.discipline === 'crossfit'" 
+                      [class.selected]="selectedSchedule()?.id === sch.id"
+                      (click)="selectSchedule(sch.id)">
+                      {{ sch.discipline === 'crossfit' ? 'CrossFit' : 'Karate' }}
+                    </button>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PANEL LATERAL DERECHO -->
+  @if (selectedSchedule(); as sel) {
+    <div class="card detail-card">
+      <h2 class="detail-title">
+        {{ (sel.discipline === 'crossfit' ? 'CrossFit' : 'Karate') | uppercase }} · {{ formatTime(sel.start_time) }} - {{ formatTime(sel.end_time) }}
+      </h2>
+
+      <p class="muted detail-desc">
+        Unos {{ sel.student_count }} alumnos. La mayoría niños. Aquí se ve quién asiste y si su suscripción está al corriente.
+      </p>
+
+      <div class="students-list">
+        @for (student of sel.students; track student.id) {
+          <div class="student-row">
+            <app-avatar [name]="student.full_name" [photoUrl]="student.photo_url" [size]="40" />
+            <div class="student-info">
+              <b>{{ student.full_name }}</b>
+              <small class="muted d-block">{{ student.membership.plan || 'Sin plan activo' }}</small>
+            </div>
+            <span [class]="'tag ' + getStudentStatusLabel(student).css">
+              {{ getStudentStatusLabel(student).text }}
+            </span>
+          </div>
+        } @empty {
+          <p class="muted empty-msg">No hay alumnos inscritos en este horario.</p>
+        }
+      </div>
+
+      <div class="detail-footer">
+        <button type="button" class="btn-outline-wide">Ver los {{ sel.student_count }} alumnos</button>
+      </div>
+    </div>
+  }
+
+</div>
+
+<!-- MODAL PARA REGISTRAR / EDITAR HORARIO -->
+@if (showCreateModal()) {
+  <div class="modal-backdrop" (click)="closeCreateModal()">
+    <div class="modal-card card" (click)="$event.stopPropagation()">
+      <h2 class="modal-title">REGISTRAR NUEVO HORARIO</h2>
+
+      <form [formGroup]="createForm" (ngSubmit)="createSchedule()">
+        <div class="form-group">
+          <label>Disciplina</label>
+          <select formControlName="discipline" class="input-standard select-bold">
+            <option value="crossfit">CrossFit</option>
+            <option value="karate">Karate</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Hora de inicio</label>
+            <select formControlName="start_time" class="input-standard select-bold">
+              <option value="06:00">06:00</option>
+              <option value="07:00">07:00</option>
+              <option value="08:00">08:00</option>
+              <option value="16:00">16:00</option>
+              <option value="17:00">17:00</option>
+              <option value="18:00">18:00</option>
+              <option value="19:00">19:00</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Hora de fin</label>
+            <select formControlName="end_time" class="input-standard select-bold">
+              <option value="07:00">07:00</option>
+              <option value="08:00">08:00</option>
+              <option value="09:00">09:00</option>
+              <option value="17:00">17:00</option>
+              <option value="18:00">18:00</option>
+              <option value="19:00">19:00</option>
+              <option value="20:00">20:00</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Días de la semana</label>
+          <div class="days-selector">
+            @for (day of weekDays; track day.id) {
+              <button 
+                type="button" 
+                class="day-btn" 
+                [class.selected]="isDaySelected(day.id)" 
+                (click)="toggleDay(day.id)">
+                {{ day.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeCreateModal()">Cancelar</button>
+          <button 
+            type="submit" 
+            class="btn-primary"
+            [disabled]="createForm.invalid || createForm.controls.weekdays.value.length === 0">
+            Guardar horario
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

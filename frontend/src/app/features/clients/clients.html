@@ -1,0 +1,208 @@
+@if (isListView()) {
+  <!-- VISTA 1: LISTADO GENERAL -->
+  <div class="page-top">
+    <h1>CLIENTES</h1>
+    <a routerLink="/clientes/nuevo" class="btn-primary">+ Nuevo cliente</a>
+  </div>
+
+  <div class="card search-card">
+    <input 
+      type="text" 
+      class="input-standard" 
+      placeholder="Buscar cliente por nombre o teléfono..." 
+      [value]="searchTerm()"
+      (input)="searchTerm.set($any($event.target).value)">
+  </div>
+
+  <div class="clients-grid">
+    @for (client of filteredClients(); track client.id) {
+      <div class="card client-item-card" [routerLink]="['/clientes', client.id]">
+        <app-avatar [name]="getClientDisplayName(client)" [photoUrl]="client.photo_url" [size]="48" />
+        <div class="client-item-info">
+          <b>{{ getClientDisplayName(client) }}</b>
+          <small class="muted d-block">
+            {{ getClientDisciplineName(client) }} · {{ client.phone }}
+          </small>
+        </div>
+        <span [class]="'tag ' + getBadgeClass(client)">{{ getBadgeText(client) }}</span>
+      </div>
+    } @empty {
+      <div class="card empty-card">
+        <p class="muted">No se encontraron clientes registrados.</p>
+      </div>
+    }
+  </div>
+
+} @else {
+  <!-- VISTA 2: FORMULARIO DE REGISTRO / DETALLE -->
+  <div class="client-layout">
+
+    <header class="client-header">
+      <div class="avatar-container">
+        @if (photoPreview()) {
+          <img [src]="photoPreview()" class="avatar-img-large" alt="Foto de perfil">
+        } @else {
+          <div class="avatar-circle-large">{{ clientInitials() }}</div>
+        }
+      </div>
+      <div>
+        <h1 class="client-name">{{ clientName() }}</h1>
+        <span class="subtitle-tag">{{ isNew() ? 'Registro nuevo' : getBadgeText(existingClient()!) }}</span>
+      </div>
+    </header>
+
+    <div class="grid-container">
+
+      <!-- SECCIÓN IZQUIERDA: DATOS -->
+      <section class="card data-card">
+        <h2 class="card-title">DATOS DEL CLIENTE</h2>
+
+        @if (isNew()) {
+          <form [formGroup]="form">
+            <div class="form-group row">
+              <label>Nombres</label>
+              <input type="text" formControlName="first_name" class="input-standard" placeholder="Ej. Luis Ángel">
+            </div>
+
+            <div class="form-group row">
+              <label>Apellidos</label>
+              <input type="text" formControlName="last_name" class="input-standard" placeholder="Ej. Ruiz">
+            </div>
+
+            <div class="form-group row">
+              <label>Foto</label>
+              <div class="file-upload-drop" (dragover)="onDragOver($event)" (drop)="onDrop($event, 'photo')">
+                <label for="foto-upload" class="btn-bold-photo">Subir o cambiar foto</label>
+                <input id="foto-upload" type="file" hidden (change)="onFileSelected($event, 'photo')" accept="image/*">
+                <span class="file-name" *ngIf="photoFile()">📎 {{ photoFile()?.name }}</span>
+              </div>
+            </div>
+
+            <div class="form-group row">
+              <label>WhatsApp</label>
+              <input type="text" formControlName="phone" class="input-standard" placeholder="10 dígitos">
+            </div>
+
+            <div class="form-group row">
+              <label>Clase</label>
+              <select formControlName="discipline" class="input-standard select-bold">
+                <option value="crossfit">CrossFit</option>
+                <option value="karate">Karate</option>
+              </select>
+            </div>
+          </form>
+        } @else if (existingClient(); as c) {
+          <div class="form-group row">
+            <label>Foto</label>
+            <div class="file-upload-drop" (dragover)="onDragOver($event)" (drop)="onDrop($event, 'photo')">
+              <label for="foto-upload-ex" class="btn-bold-photo">Subir o cambiar foto</label>
+              <input id="foto-upload-ex" type="file" hidden (change)="onFileSelected($event, 'photo')" accept="image/*">
+              <span class="file-name" *ngIf="photoFile()">📎 {{ photoFile()?.name }}</span>
+            </div>
+          </div>
+
+          <div class="form-group row">
+            <label>WhatsApp</label>
+            <span class="value-bold">{{ c.phone || '[Teléfono]' }}</span>
+          </div>
+
+          <div class="form-group row">
+            <label>Clase</label>
+            <span class="value-bold">{{ getClientDisciplineName(c) }}</span>
+          </div>
+
+          <div class="form-group row">
+            <label>Plan anterior</label>
+            <span class="value-bold">
+              @if (c.membership && c.membership.plan) {
+                {{ c.membership.plan }}
+                @if (c.membership.end_date) {
+                  · {{ c.membership.end_date | date:'dd MMM' }}
+                }
+              } @else {
+                Sin plan activo
+              }
+            </span>
+          </div>
+
+          <div class="form-group row">
+            <label>Cliente desde</label>
+            <span class="value-bold">
+              @if (c.created_at) {
+                {{ c.created_at | date:'dd MMM yyyy' }}
+              } @else {
+                [Fecha de alta]
+              }
+            </span>
+          </div>
+
+          <!-- SECCIÓN HISTORIAL DE PAGOS DINÁMICO -->
+          <h2 class="card-title mt-4">HISTORIAL DE PAGOS</h2>
+
+          <div class="history-list">
+            @if (c.membership && c.membership.plan) {
+              <div class="history-item">
+                <div class="history-info">
+                  <b class="history-plan">{{ c.membership.plan }}</b>
+                  <small class="muted d-block">
+                    @if (c.membership.end_date) {
+                      {{ c.membership.end_date | date:'dd MMM' }} · aprobado
+                    } @else {
+                      Aprobado
+                    }
+                  </small>
+                </div>
+                <span class="tag-pagado">Pagado</span>
+              </div>
+            } @else {
+              <p class="muted empty-history">Sin pagos registrados en el historial.</p>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- SECCIÓN DERECHA: RENOVACIÓN / ALTA -->
+      <section class="card renewal-card">
+        <h2 class="card-title">{{ isNew() ? 'INSCRIPCIÓN Y PAGO INICIAL' : 'RENOVAR SUSCRIPCIÓN' }}</h2>
+
+        <label for="comprobante-upload-ex" class="upload-zone clickable-zone" (dragover)="onDragOver($event)" (drop)="onDrop($event, 'proof')">
+          @if (proofFile()) {
+            <span class="file-loaded">📎 {{ proofFile()?.name }}</span>
+          } @else {
+            <span class="upload-text">Comprobante recibido por WhatsApp</span>
+          }
+          <input id="comprobante-upload-ex" type="file" hidden (change)="onFileSelected($event, 'proof')" accept="image/*">
+        </label>
+
+        <div class="plan-selector">
+          <p class="plan-subtitle">
+            {{ isNew() ? 'Plan inicial del cliente' : 'Plan (se puede cambiar sin volver a registrar)' }}
+          </p>
+          <div class="plan-buttons">
+            <button type="button" [class.active]="selectedPlan() === 'Mensual'" (click)="selectPlan('Mensual')">
+              Mensual
+            </button>
+            <button type="button" [class.active]="selectedPlan() === '15 días'" (click)="selectPlan('15 días')">
+              15 días
+            </button>
+          </div>
+        </div>
+
+        <p class="vigencia-text">Nueva vigencia <strong>{{ nuevaVigencia() }}</strong></p>
+
+        <button 
+          type="button" 
+          class="btn-primary w-100" 
+          [disabled]="isNew() ? form.invalid : !proofFile()"
+          (click)="save()">
+          {{ isNew() ? 'Registrar cliente y activar' : 'Activar suscripción' }}
+        </button>
+
+        <p class="helper-text">
+          {{ isNew() ? 'Llena los campos obligatorios para habilitar el botón.' : 'Si pagó 15 días, aquí mismo puede registrar la segunda quincena.' }}
+        </p>
+      </section>
+
+    </div>
+  </div>
+}
