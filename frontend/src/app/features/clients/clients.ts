@@ -3,9 +3,9 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ClientDetail, Discipline, ScheduleDetail } from '../../core/models/models';
+import { ClientDetail, Discipline, ScheduleBrief, ScheduleDetail } from '../../core/models/models';
 import { Avatar } from '../../shared/avatar';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Observable, switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-clients',
@@ -27,6 +27,7 @@ export class Clients implements OnInit {
   clientId = signal<number | null>(null);
 
   clientsList = signal<any[]>([]);
+  schedulesList = signal<ScheduleBrief[]>([]);
   searchTerm = signal('');
 
   clientName = signal('NUEVO CLIENTE');
@@ -62,6 +63,7 @@ export class Clients implements OnInit {
     last_name: ['', Validators.required],
     phone: ['', [Validators.required, Validators.minLength(10)]],
     discipline: ['crossfit' as Discipline, Validators.required],
+    schedule_id: [null as number | null, Validators.required],
   });
 
   nuevaVigencia = computed(() => {
@@ -92,7 +94,23 @@ export class Clients implements OnInit {
     });
   });
 
+  // Horarios disponibles para la disciplina elegida en el formulario
+  schedulesFor(discipline: Discipline): ScheduleBrief[] {
+    return this.schedulesList().filter((s) => s.discipline === discipline);
+  }
+
   ngOnInit() {
+    // Carga los horarios para el selector de hora del formulario de alta
+    this.http.get<ScheduleBrief[]>('/api/schedules').subscribe({
+      next: (data) => this.schedulesList.set(data),
+      error: (err) => console.error('Error al cargar horarios:', err),
+    });
+
+    // Al cambiar de disciplina se limpia la hora elegida
+    this.form.controls.discipline.valueChanges.subscribe(() =>
+      this.form.controls.schedule_id.setValue(null)
+    );
+
     // NUEVO: lee el filtro de la dirección. Se actualiza también cuando solo cambia
     // la parte de "?membership=..." sin cambiar de pantalla (por ejemplo, al quitar el filtro)
     this.route.queryParamMap.subscribe((q) => this.membershipFilter.set(q.get('membership')));
@@ -192,7 +210,7 @@ export class Clients implements OnInit {
     this.photoFile.set(null);
     this.photoPreview.set(null);
     this.proofFile.set(null);
-    this.form.reset({ discipline: 'crossfit' });
+    this.form.reset({ discipline: 'crossfit', schedule_id: null });
   }
 
   selectPlan(plan: 'Mensual' | '15 días') {
@@ -282,61 +300,61 @@ export class Clients implements OnInit {
     return 'tag-gray';
   }
 
+  // Crea la suscripción de verdad. El comprobante subido a mano por la administradora
+  // se aprueba de inmediato; si no hay comprobante, se renueva directo el plan.
+  private activateSubscription(clientId: number): Observable<unknown> {
+    const planId = this.selectedPlan() === 'Mensual' ? 1 : 2;
+    const proof = this.proofFile();
+
+    if (!proof) {
+      return this.http.post(`/api/clients/${clientId}/subscriptions/renew`, { plan_id: planId });
+    }
+
+    const fd = new FormData();
+    fd.append('file', proof);
+    fd.append('client_id', clientId.toString());
+    fd.append('plan_id', planId.toString());
+    return this.http
+      .post<{ id: number }>('/api/proofs', fd)
+      .pipe(switchMap((p) => this.http.post(`/api/proofs/${p.id}/approve`, {})));
+  }
+
   save() {
     if (this.isNew()) {
       if (this.form.invalid) return;
       const val = this.form.getRawValue();
 
-      // 1. Consultar los horarios reales de la base de datos para mapear el ID correcto
-      this.http.get<any[]>('/api/schedules').subscribe({
-        next: (schedules) => {
-          // Buscar el id del primer horario activo que coincida con la disciplina elegida
-          const targetSchedule = schedules.find(
-            (s) => s.discipline.toLowerCase() === val.discipline.toLowerCase()
-          );
+      // Se inscribe al cliente en el horario (hora) que eligió en el formulario
+      const clientData = {
+        first_name: val.first_name,
+        last_name: val.last_name,
+        phone: val.phone,
+        schedule_ids: val.schedule_id !== null ? [val.schedule_id] : [],
+      };
 
-          // Si no encuentra coincidencia directa, se pasa la lista de schedules para que no quede huérfano
-          const assignedScheduleIds = targetSchedule ? [targetSchedule.id] : [];
+      this.http.post<ClientDetail>('/api/clients', clientData).subscribe({
+        next: (created) => {
+          const tasks = [];
 
-          const clientData = {
-            first_name: val.first_name,
-            last_name: val.last_name,
-            phone: val.phone,
-            schedule_ids: assignedScheduleIds,
-          };
+          if (this.photoFile()) {
+            const fdPhoto = new FormData();
+            fdPhoto.append('file', this.photoFile()!);
+            tasks.push(this.http.post(`/api/clients/${created.id}/photo`, fdPhoto));
+          }
 
-          // 2. Crear el cliente con el ID de horario correcto
-          this.http.post<ClientDetail>('/api/clients', clientData).subscribe({
-            next: (created) => {
-              const tasks = [];
+          // Activa la suscripción (con o sin comprobante)
+          tasks.push(this.activateSubscription(created.id));
 
-              if (this.photoFile()) {
-                const fdPhoto = new FormData();
-                fdPhoto.append('file', this.photoFile()!);
-                tasks.push(this.http.post(`/api/clients/${created.id}/photo`, fdPhoto));
-              }
-
-              if (this.proofFile()) {
-                const fdProof = new FormData();
-                fdProof.append('file', this.proofFile()!);
-                fdProof.append('client_id', created.id.toString());
-                fdProof.append('plan_id', this.selectedPlan() === 'Mensual' ? '1' : '2');
-                tasks.push(this.http.post('/api/proofs', fdProof));
-              }
-
-              if (tasks.length > 0) {
-                forkJoin(tasks).subscribe({
-                  next: () => this.router.navigate(['/clientes']),
-                  error: (err) => console.error('Error al subir archivos:', err),
-                });
-              } else {
-                this.router.navigate(['/clientes']);
-              }
-            },
-            error: (err) => console.error('Error registrando cliente:', err),
-          });
+          if (tasks.length > 0) {
+            forkJoin(tasks).subscribe({
+              next: () => this.router.navigate(['/clientes']),
+              error: (err) => console.error('Error al subir archivos:', err),
+            });
+          } else {
+            this.router.navigate(['/clientes']);
+          }
         },
-        error: (err) => console.error('Error al obtener lista de horarios:', err),
+        error: (err) => console.error('Error registrando cliente:', err),
       });
     } else {
       // Flujo de renovación para cliente existente
@@ -351,14 +369,8 @@ export class Clients implements OnInit {
         tasks.push(this.http.post(`/api/clients/${c.id}/photo`, fdPhoto));
       }
 
-      if (this.proofFile()) {
-        const planId = this.selectedPlan() === 'Mensual' ? '1' : '2';
-        const fdProof = new FormData();
-        fdProof.append('file', this.proofFile()!);
-        fdProof.append('client_id', c.id.toString());
-        fdProof.append('plan_id', planId);
-        tasks.push(this.http.post('/api/proofs', fdProof));
-      }
+      // Activa la suscripción (con o sin comprobante)
+      tasks.push(this.activateSubscription(c.id));
 
       if (tasks.length > 0) {
         forkJoin(tasks).subscribe({

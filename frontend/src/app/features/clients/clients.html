@@ -99,6 +99,16 @@
                 <option value="karate">Karate</option>
               </select>
             </div>
+
+            <div class="form-group row">
+              <label>Hora</label>
+              <select formControlName="schedule_id" class="input-standard select-bold">
+                <option [ngValue]="null" disabled>Elige una hora</option>
+                @for (s of schedulesFor(form.controls.discipline.value); track s.id) {
+                  <option [ngValue]="s.id">{{ s.start_time.substring(0, 5) }} - {{ s.end_time.substring(0, 5) }}</option>
+                }
+              </select>
+            </div>
           </form>
         } @else if (existingClient(); as c) {
           <div class="form-group row">
