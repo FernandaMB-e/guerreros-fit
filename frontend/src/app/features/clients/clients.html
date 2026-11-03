@@ -13,6 +13,15 @@
       [value]="searchTerm()"
       (input)="searchTerm.set($any($event.target).value)">
   </div>
+    
+    @if (membershipFilterLabel(); as label) {
+    <div class="filter-bar">
+      <span class="filter-chip">
+        Mostrando: <b>{{ label }}</b>
+        <a routerLink="/clientes" class="filter-clear" title="Quitar filtro" aria-label="Quitar filtro">✕</a>
+      </span>
+    </div>
+  }
 
   <div class="clients-grid">
     @for (client of filteredClients(); track client.id) {

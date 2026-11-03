@@ -38,6 +38,25 @@ export class Clients implements OnInit {
   photoPreview = signal<string | null>(null);
   proofFile = signal<File | null>(null);
 
+  // NUEVO: filtro que llega desde el Inicio (/clientes?membership=vencida o por_vencer)
+  membershipFilter = signal<string | null>(null);
+
+  // NUEVO: texto que se muestra en la etiqueta del filtro activo
+  membershipFilterLabel = computed(() => {
+    switch (this.membershipFilter()) {
+      case 'vencida':
+        return 'Vencidas';
+      case 'por_vencer':
+        return 'Por vencer';
+      case 'activa':
+        return 'Activas';
+      case 'sin_suscripcion':
+        return 'Sin suscripción';
+      default:
+        return null;
+    }
+  });
+
   form = this.fb.nonNullable.group({
     first_name: ['', Validators.required],
     last_name: ['', Validators.required],
@@ -58,10 +77,15 @@ export class Clients implements OnInit {
     return `${startStr} - ${endStr}`;
   });
 
+  // NUEVO: ahora aplica el filtro de membresía además del buscador
   filteredClients = computed(() => {
     const term = this.searchTerm().toLowerCase().trim();
-    if (!term) return this.clientsList();
+    const status = this.membershipFilter();
+
     return this.clientsList().filter((c) => {
+      if (status && c.membership?.status !== status) return false;
+      if (!term) return true;
+
       const name = this.getClientDisplayName(c).toLowerCase();
       const phone = c.phone || '';
       return name.includes(term) || phone.includes(term);
@@ -69,6 +93,10 @@ export class Clients implements OnInit {
   });
 
   ngOnInit() {
+    // NUEVO: lee el filtro de la dirección. Se actualiza también cuando solo cambia
+    // la parte de "?membership=..." sin cambiar de pantalla (por ejemplo, al quitar el filtro)
+    this.route.queryParamMap.subscribe((q) => this.membershipFilter.set(q.get('membership')));
+
     this.route.paramMap.subscribe((params) => {
       const idParam = params.get('id');
       const currentUrl = this.router.url;

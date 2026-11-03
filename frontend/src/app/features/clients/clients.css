@@ -5,10 +5,7 @@
   margin-bottom: 20px;
 }
 
-.search-card {
-  margin-bottom: 20px;
-  padding: 12px;
-}
+.search-card .input-standard { width: 100%; max-width: 420px; }
 
 .clients-grid {
   display: grid;
@@ -314,3 +311,23 @@
 .clickable-zone {
   cursor: pointer !important;
 }
+
+
+.filter-bar {
+  display: flex;
+  margin: 20px 0;
+}
+
+.filter-chip {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 4px 4px 4px 14px; border-radius: 999px;
+  background: var(--yellow-soft); color: var(--yellow-ink); font-size: 14px;
+}
+
+.filter-clear {
+  display: inline-grid; place-items: center;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(110, 75, 0, 0.12); color: var(--yellow-ink);
+  text-decoration: none; font-size: 13px; font-weight: 700;
+}
+.filter-clear:hover { background: rgba(110, 75, 0, 0.24); }
